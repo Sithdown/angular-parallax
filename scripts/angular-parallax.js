@@ -11,12 +11,10 @@ angular.module('angular-parallax', [
     },
     link: function($scope, elem, attrs) {
       var setPosition = function () {
-        if(!$scope.parallaxHorizontalOffset) $scope.parallaxHorizontalOffset = '0';
         var calcValY = $window.pageYOffset * ($scope.parallaxRatio ? $scope.parallaxRatio : 1.1 );
         if (calcValY <= $window.innerHeight) {
           var topVal = (calcValY < $scope.parallaxVerticalOffset ? $scope.parallaxVerticalOffset : calcValY);
-          var hozVal = ($scope.parallaxHorizontalOffset.indexOf("%") === -1 ? $scope.parallaxHorizontalOffset + 'px' : $scope.parallaxHorizontalOffset);
-          elem.css('transform', 'translate(' + hozVal + ', ' + topVal + 'px)');
+          elem.css('transform','translate(' + $scope.parallaxHorizontalOffset + 'px, ' +topVal+ 'px)');
         }
       };
 
@@ -33,13 +31,37 @@ angular.module('angular-parallax', [
     template: '<div ng-transclude></div>',
     scope: {
       parallaxRatio: '@',
-      parallaxVerticalOffset: '@',
     },
     link: function($scope, elem, attrs) {
-      var setPosition = function () {
-        var calcValY = (elem.prop('offsetTop') - $window.pageYOffset) * ($scope.parallaxRatio ? $scope.parallaxRatio : 1.1) - ($scope.parallaxVerticalOffset || 0);
-        // horizontal positioning
-        elem.css('background-position', "50% " + calcValY + "px");
+
+      var getElementOffset = function() {
+        var documentElem,
+        box = { top: 0, left: 0 },
+        doc = elem && document;
+
+        documentElem = doc.documentElement;
+
+        if ( typeof elem[0].getBoundingClientRect !== undefined ) {
+          box = elem[0].getBoundingClientRect();
+        }
+
+        return (box.top - (documentElem.clientTop || 0));
+      };
+
+      var setPosition = function ()
+      {
+
+        var elementOffset = getElementOffset();
+        var wh = $window.innerHeight;
+
+        if(elementOffset<=wh)
+        {
+          var elementHeight = elem[0].offsetHeight;
+
+          var calcValY = ((elementOffset + wh / 2) / wh * ($scope.parallaxRatio ? $scope.parallaxRatio : 1.1 ) * (elementHeight)) * -1;
+
+          elem.css('background-position', "50% " + calcValY + "px");
+        }
       };
 
       // set our initial position - fixes webkit background render bug
