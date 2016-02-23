@@ -11,12 +11,10 @@ angular.module('angular-parallax', [
     },
     link: function($scope, elem, attrs) {
       var setPosition = function () {
-        if(!$scope.parallaxHorizontalOffset) $scope.parallaxHorizontalOffset = '0';
         var calcValY = $window.pageYOffset * ($scope.parallaxRatio ? $scope.parallaxRatio : 1.1 );
         if (calcValY <= $window.innerHeight) {
           var topVal = (calcValY < $scope.parallaxVerticalOffset ? $scope.parallaxVerticalOffset : calcValY);
-          var hozVal = ($scope.parallaxHorizontalOffset.indexOf("%") === -1 ? $scope.parallaxHorizontalOffset + 'px' : $scope.parallaxHorizontalOffset);
-          elem.css('transform', 'translate(' + hozVal + ', ' + topVal + 'px)');
+          elem.css('transform','translate(' + $scope.parallaxHorizontalOffset + 'px, ' +topVal+ 'px)');
         }
       };
 
@@ -33,23 +31,68 @@ angular.module('angular-parallax', [
     template: '<div ng-transclude></div>',
     scope: {
       parallaxRatio: '@',
-      parallaxVerticalOffset: '@',
     },
     link: function($scope, elem, attrs) {
-      var setPosition = function () {
-        var calcValY = (elem.prop('offsetTop') - $window.pageYOffset) * ($scope.parallaxRatio ? $scope.parallaxRatio : 1.1) - ($scope.parallaxVerticalOffset || 0);
-        // horizontal positioning
-        elem.css('background-position', "50% " + calcValY + "px");
+
+
+      var calcValY = 0,
+      ticking = false;
+
+      function onScroll() {
+        calcValY = calcPosition();
+        requestTick();
+      }
+
+      function requestTick() {
+        if(!ticking) {
+          requestAnimationFrame(update);
+        }
+        ticking = true;
+      }
+
+      function update() {
+
+        ticking = false;
+
+        var curVal = calcValY;
+
+        elem.css('background-position', "50% " + curVal + "px");
+      }
+
+
+      function getElementOffset() {
+        var documentElem,
+        top = 0,
+        doc = elem && document;
+
+        documentElem = doc.documentElement;
+
+        if ( typeof elem[0].getBoundingClientRect !== undefined ) {
+          top = elem[0].getBoundingClientRect().top;
+        }
+
+        return (top - (documentElem.clientTop || 0));
       };
 
-      // set our initial position - fixes webkit background render bug
-      angular.element($window).bind('load', function(e) {
-        setPosition();
-        $scope.$apply();
-      });
+      function calcPosition()
+      {
 
-      angular.element($window).bind("scroll", setPosition);
-      angular.element($window).bind("touchmove", setPosition);
+        var elementOffset = getElementOffset();
+        var wh = $window.innerHeight;
+
+        var elementHeight = elem[0].offsetHeight;
+
+        return ((elementOffset + wh / 2) / wh * ($scope.parallaxRatio ? $scope.parallaxRatio : 1.1 ) * (elementHeight)) * -1;
+
+      };
+
+      angular.element($window).bind("scroll", onScroll);
+      angular.element($window).bind("touchmove", onScroll);
+
+      $scope.$on('$destroy', function() {
+        angular.element($window).unbind("scroll");
+        angular.element($window).unbind("touchmove");
+      });
     }  // link function
   };
 }]);
