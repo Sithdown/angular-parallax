@@ -54,9 +54,7 @@ angular.module('angular-parallax', [
 
         ticking = false;
 
-        var curVal = calcValY;
-
-        elem.css('background-position', "50% " + curVal + "px");
+        elem.css('background-position', "50% " + calcValY + "px");
       }
 
 
